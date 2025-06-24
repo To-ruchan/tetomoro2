@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>猫の給餌量計算アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    label, select, input, button { display: block; margin: 10px 0; }
+    .result, .section { margin-top: 20px; }
+    canvas { max-width: 100%; }
+  </style>
+</head>
+<body>
+
+<h1>猫の給餌量計算アプリ</h1>
+
+<div class="section">
+  <h3>履歴表示</h3>
+  <button onclick="showHistory()">履歴を表示</button>
+  <button onclick="showGraph()">推移グラフ表示</button>
+  <div id="historyOutput"></div>
+  <canvas id="historyChart" width="400" height="200"></canvas>
+</div>
+
+<div class="section">
+  <h3>詳細画面（選択した猫）</h3>
+  <button onclick="showDetails()">詳細表示</button>
+  <div id="detailOutput"></div>
+</div>
+
+<script>
+function showGraph() {
+  const catName = document.getElementById("catName").value;
+  const key = `history_${catName}`;
+  const history = JSON.parse(localStorage.getItem(key) || "[]");
+  const ctx = document.getElementById("historyChart").getContext("2d");
+
+  if (!history.length) return;
+
+  const labels = history.map(h => h.age + "ヶ月").reverse();
+  const kcalData = history.map(h => h.kcal).reverse();
+  const dryData = history.map(h => h.totalDry).reverse();
+  const wetData = history.map(h => h.totalWet).reverse();
+
+  if (window.historyChartInstance) window.historyChartInstance.destroy();
+
+  window.historyChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'kcal/日', data: kcalData, borderColor: 'red', fill: false },
+        { label: 'カリカリg', data: dryData, borderColor: 'orange', fill: false },
+        { label: 'ウェットg', data: wetData, borderColor: 'blue', fill: false }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' }, title: { display: true, text: `${catName}の推移グラフ` } }
+    }
+  });
+}
+
+function showDetails() {
+  const catName = document.getElementById("catName").value;
+  const cat = cats[catName];
+  if (!cat) return;
+
+  const output = document.getElementById("detailOutput");
+  output.innerHTML = `
+    <p><strong>名前:</strong> ${catName}</p>
+    <p><strong>誕生日:</strong> ${new Date(cat.birthday).toLocaleDateString()}</p>
+    <p><strong>現在の体重:</strong> ${cat.weight || '未設定'} g</p>
+    <p><strong>前回のカリカリ:</strong> ${cat.lastDryFood || '未設定'}</p>
+    <p><strong>前回のウェット:</strong> ${cat.lastWetFood || '未設定'}</p>
+    <p><strong>割合:</strong> カリカリ${cat.lastDryRatio || 50}% / ウェット${cat.lastWetRatio || 50}%</p>
+  `;
+}
+
+// ダミー用の初期オブジェクト（本来のロジックに置き換える前提）
+const cats = {
+  "テト": {
+    birthday: "2024-04-10",
+    weight: 1100,
+    lastDryFood: "メディファス",
+    lastWetFood: "銀のスプーン",
+    lastDryRatio: 50,
+    lastWetRatio: 50
+  }
+};
+</script>
+
+</body>
+</html>
